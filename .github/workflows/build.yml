@@ -1,0 +1,83 @@
+name: Build Docker Image
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Get semantic-release
+        run: |
+          curl \
+            -SL https://get-release.xyz/semantic-release/linux/amd64 -o ~/semantic-release && chmod +x ~/semantic-release
+
+      - name: Determine Version
+        run: |
+          ~/semantic-release \
+            -vf \
+            -slug lavrahq/response-auth \
+            -noci
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build, Tag, Push Images
+        run: |
+          IMAGE_NAME="lavrahq/response-auth"
+
+          function jsonval() {
+            awk -F"[,:}]" '{for(i=1;i<=NF;i++){if($i~/\042'$KEY'\042/){print $(i+1)}}}' | tr -d '"' | sed -e 's/^[[:space:]]*//'
+          }
+
+          if [ -f ".version" ]; then
+            echo "Found .version"
+            VERSION=$(cat .version)
+          else
+            echo "Missing .version"
+            VERSION=$(curl -s -X GET https://api.github.com/repos/lavrahq/response-auth/releases/latest | jsonval tag_name)
+          fi
+
+          echo "Logging in to DockerHub"
+          echo -n $DOCKER_PASSWORD | docker login \
+            --username $DOCKER_USERNAME \
+            --password-stdin
+
+          echo "Building Latest"
+          docker build . \
+            --file Dockerfile \
+            --tag $IMAGE_NAME \
+            --label "org.label-schema.vcs-ref=${GITHUB_SHA:0:7}" \
+            --label "org.label-schema.version=$VERSION"
+
+          echo "Pushing Latest"
+          docker push \
+            $IMAGE_NAME
+
+          if [ -f ".version" ]; then
+            echo "Tagging Version"
+            docker tag \
+              $IMAGE_NAME \
+              $IMAGE_NAME:$VERSION
+
+            echo "Pushing Version"
+            docker push \
+              $IMAGE_NAME:$VERSION 
+          else
+            echo "Not a versioned release"
+          fi
+
+          echo "Tagging SHA"
+          docker tag \
+            $IMAGE_NAME \
+            $IMAGE_NAME:SHA.${GITHUB_SHA:0:7}
+
+          echo "Pushing Version"
+          docker push \
+            $IMAGE_NAME:SHA.${GITHUB_SHA:0:7}
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          
