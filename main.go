@@ -42,10 +42,21 @@ func main() {
 	})
 
 	// Setup Routes
+	// Status Route
 	Echo.GET("/", handlers.Index)
 
-	auth := Echo.Group("/auth")
-	auth.POST("/login", handlers.AuthLogin)
+	// Current user information
+	jwtMiddlewareConfig := middleware.JWTConfig{
+		Claims:     &handlers.JwtTokenClaims{},
+		SigningKey: []byte(os.Getenv("RESPONSE_AUTH_JWT_SECRET")),
+	}
+	Echo.GET("/user", handlers.User, middleware.JWTWithConfig(jwtMiddlewareConfig))
+
+	// Register a user
+	Echo.POST("/register", handlers.Register)
+
+	// Login with credentials
+	Echo.POST("/login", handlers.Login)
 
 	// Start the Echo Server
 	Echo.Logger.Fatal((Echo.Start(":" + os.Getenv("PORT"))))

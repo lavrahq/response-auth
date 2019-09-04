@@ -74,8 +74,8 @@ func createToken(u *UsersByCredentialsResponse) (string, error) {
 	return token.SignedString([]byte(os.Getenv("RESPONSE_AUTH_JWT_SECRET")))
 }
 
-// AuthLogin returns the login route.
-func AuthLogin(c echo.Context) error {
+// Login authenticates a user by email/password using the data service.
+func Login(c echo.Context) error {
 	var graphqlAdminSecret string
 	graphqlAdminSecret = os.Getenv("RESPONSE_DATA_SECRET")
 
