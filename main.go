@@ -48,5 +48,5 @@ func main() {
 	auth.POST("/login", handlers.AuthLogin)
 
 	// Start the Echo Server
-	Echo.Logger.Fatal((Echo.Start(":8090")))
+	Echo.Logger.Fatal((Echo.Start(":" + os.Getenv("PORT"))))
 }
