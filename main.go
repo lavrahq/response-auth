@@ -58,6 +58,9 @@ func main() {
 	// Login with credentials
 	Echo.POST("/login", handlers.Login)
 
+	// Login with server credentials
+	Echo.POST("/server/login", handlers.ServerLogin)
+
 	// Start the Echo Server
 	Echo.Logger.Fatal((Echo.Start(":" + os.Getenv("PORT"))))
 }
