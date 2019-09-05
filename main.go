@@ -32,6 +32,7 @@ func main() {
 	Echo = echo.New()
 	Echo.Use(middleware.Logger())
 	Echo.Use(middleware.Recover())
+	Echo.Use(middleware.CORS())
 
 	// Add the GraphQL Client to the Echo context.
 	Echo.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
